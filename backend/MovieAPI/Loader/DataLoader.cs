@@ -11,8 +11,6 @@ public class DataLoader
     public Dictionary<string, HashSet<Movie>> TagsToMovies { get; private set; } = new Dictionary<string, HashSet<Movie>>();
     public Dictionary<string, Person> PersonsToNConst { get; private set; } = new Dictionary<string, Person>();
 
-    const string Path = "backend/MovieAPI/Data/";
-
     private void LoadData(string dataPath)
     {
         MovieToTConst = InitMovies(dataPath + "MovieCodes_IMDB.tsv");
@@ -20,6 +18,46 @@ public class DataLoader
         LoadTags(dataPath, MovieToTConst);
         PersonsToNConst = InitPerson(dataPath + "ActorsDirectorsNames_IMDB.txt");
         LoadPersonMovies(dataPath + "ActorsDirectorsCodes_IMDB.tsv", MovieToTConst, PersonsToNConst);
+
+        foreach (var movie in MovieToTConst) {
+            MovieToMovieName.Add(movie.Value.Title, movie.Value);
+        }
+        foreach (var person in PersonsToNConst.Values)
+        {
+            foreach (var movieId in person.InMovies[0])
+            {
+                if (MovieToTConst.TryGetValue(movieId, out var movie))
+                {
+                    if (!PersonNameToMovies.ContainsKey(person.Name))
+                    {
+                        PersonNameToMovies[person.Name] = new HashSet<Movie>();
+                    }
+                    PersonNameToMovies[person.Name].Add(movie);
+                }
+            }
+            foreach (var movieId in person.InMovies[1])
+            {
+                if (MovieToTConst.TryGetValue(movieId, out var movie))
+                {
+                    if (!PersonNameToMovies.ContainsKey(person.Name))
+                    {
+                        PersonNameToMovies[person.Name] = new HashSet<Movie>();
+                    }
+                    PersonNameToMovies[person.Name].Add(movie);
+                }
+            }
+        }
+        foreach (var movie in MovieToTConst.Values)
+        {
+            foreach (var tag in movie.Tags)
+            {
+                if (!TagsToMovies.ContainsKey(tag))
+                {
+                    TagsToMovies[tag] = new HashSet<Movie>();
+                }
+                TagsToMovies[tag].Add(movie);
+            }
+        }
 
     }
 
