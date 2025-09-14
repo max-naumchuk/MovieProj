@@ -2,13 +2,14 @@
 /* globals $ */
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 
 const MovieDetail = () => {
   const { title } = useParams();
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -28,31 +29,57 @@ const MovieDetail = () => {
 
   useEffect(() => {
     if (movie) {
-      // Initialize Actors DataTable
       if ($.fn.DataTable.isDataTable('#actorsTable')) {
         $('#actorsTable').DataTable().destroy();
       }
       $('#actorsTable').DataTable({
         data: (movie.actors || []).map(actor => [actor]),
-        columns: [{ title: 'Actors' }],
+        columns: [{ 
+          title: 'Actors',
+          render: (data, type, row) => {
+            return `<a href="#" class="person-link">${data}</a>`;
+          } 
+        }],
         paging: true,
         searching: true,
-        responsive: true
+        responsive: true,
+        createdRow: (row, data) => {
+          $(row).on('click', '.person-link', (e) => {
+            e.preventDefault();
+            navigate(`/person/${encodeURIComponent(data[0])}`);
+          });
+        }
       });
 
-      // Initialize Tags DataTable
       if ($.fn.DataTable.isDataTable('#tagsTable')) {
         $('#tagsTable').DataTable().destroy();
       }
       $('#tagsTable').DataTable({
         data: (movie.tags || []).map(tag => [tag]),
-        columns: [{ title: 'Tags' }],
+        columns: [{ 
+          title: 'Tags',
+          render: (data, type, row) => {
+            return `<a href="#" class="tag-link">${data}</a>`;
+          }
+        }],
         paging: true,
         searching: true,
-        responsive: true
+        responsive: true,
+        createdRow: (row, data) => {
+          $(row).on('click', '.tag-link', (e) => {
+            e.preventDefault();
+            navigate(`/tag/${encodeURIComponent(data[0])}`);
+          });
+        }
       });
     }
-  }, [movie]);
+  }, [movie, navigate]);
+
+  const handleDirectorClick = () => {
+    if (movie.director) {
+      navigate(`/person/${encodeURIComponent(movie.director)}`);
+    }
+  };
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
@@ -61,7 +88,7 @@ const MovieDetail = () => {
     <div>
       <h1>{movie.title}</h1>
       <p>Rating: {movie.rating || 'N/A'}</p>
-      <p>Director: {movie.director || 'N/A'}</p>
+      <p>Director: <a href="#" onClick={handleDirectorClick} style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }}>{movie.director || 'N/A'}</a></p>
       <h2>Actors</h2>
       <table id="actorsTable" className="display" style={{ width: '100%' }}></table>
       <h2>Tags</h2>

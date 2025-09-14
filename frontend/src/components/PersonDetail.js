@@ -1,13 +1,15 @@
 /* eslint-disable no-undef */
 /* globals $ */
+
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 
 const PersonDetail = () => {
   const { name } = useParams();
   const [person, setPerson] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -35,10 +37,20 @@ const PersonDetail = () => {
       }
       $('#actedTable').DataTable({
         data: actedMoviesData,
-        columns: [{ title: 'Acted Movies' }],
+        columns: [{ title: 'Acted Movies',
+          render: (data, type, row) => {
+            return `<a href="#" class="movie-link">${data}</a>`;
+          }
+        }],
         paging: true,
         searching: true,
-        responsive: true
+        responsive: true,
+        createdRow: (row, data) => {
+          $(row).on('click', '.movie-link', (e) => {
+            e.preventDefault();
+            navigate(`/movie/${encodeURIComponent(data[0])}`);
+          });
+        }
       });
 
       if ($.fn.DataTable.isDataTable('#directedTable')) {
@@ -46,13 +58,23 @@ const PersonDetail = () => {
       }
       $('#directedTable').DataTable({
         data: directedMoviesData,
-        columns: [{ title: 'Directed Movies' }],
+        columns: [{ title: 'Directed Movies',
+          render: (data, type, row) => {
+            return `<a href="#" class="movie-link">${data}</a>`;
+          }
+        }],
         paging: true,
         searching: true,
-        responsive: true
+        responsive: true,
+        createdRow: (row, data) => {
+          $(row).on('click', '.movie-link', (e) => {
+            e.preventDefault();
+            navigate(`/movie/${encodeURIComponent(data[0])}`);
+          });
+        }
       });
     }
-  }, [person]);
+  }, [person, navigate]);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
