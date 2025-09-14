@@ -7,9 +7,14 @@ public class DataLoader
 {
     public Dictionary<string, Movie> MovieToTConst { get; private set; } = new Dictionary<string, Movie>();
     public Dictionary<string, Movie> MovieToMovieName { get; private set; } = new Dictionary<string, Movie>();
-    public Dictionary<string, HashSet<Movie>> PersonNameToMovies { get; private set; } = new Dictionary<string, HashSet<Movie>>();
+    public Dictionary<string, HashSet<Movie>[]> PersonNameToMovies { get; private set; } = new Dictionary<string, HashSet<Movie>[]>();
     public Dictionary<string, HashSet<Movie>> TagsToMovies { get; private set; } = new Dictionary<string, HashSet<Movie>>();
     public Dictionary<string, Person> PersonsToNConst { get; private set; } = new Dictionary<string, Person>();
+
+    public DataLoader(string dataPath)
+    {
+        LoadData(dataPath);
+    }
 
     private void LoadData(string dataPath)
     {
@@ -19,8 +24,10 @@ public class DataLoader
         PersonsToNConst = InitPerson(dataPath + "ActorsDirectorsNames_IMDB.txt");
         LoadPersonMovies(dataPath + "ActorsDirectorsCodes_IMDB.tsv", MovieToTConst, PersonsToNConst);
 
-        foreach (var movie in MovieToTConst) {
-            MovieToMovieName.Add(movie.Value.Title, movie.Value);
+        foreach (var movie in MovieToTConst.Values)
+        {
+            if (MovieToMovieName.ContainsKey(movie.Title)) continue;
+            MovieToMovieName.Add(movie.Title, movie);
         }
         foreach (var person in PersonsToNConst.Values)
         {
@@ -30,9 +37,9 @@ public class DataLoader
                 {
                     if (!PersonNameToMovies.ContainsKey(person.Name))
                     {
-                        PersonNameToMovies[person.Name] = new HashSet<Movie>();
+                        PersonNameToMovies[person.Name] = new[] { new HashSet<Movie>(), new HashSet<Movie>() };
                     }
-                    PersonNameToMovies[person.Name].Add(movie);
+                    PersonNameToMovies[person.Name][0].Add(movie);
                 }
             }
             foreach (var movieId in person.InMovies[1])
@@ -41,9 +48,9 @@ public class DataLoader
                 {
                     if (!PersonNameToMovies.ContainsKey(person.Name))
                     {
-                        PersonNameToMovies[person.Name] = new HashSet<Movie>();
+                        PersonNameToMovies[person.Name] = new[] { new HashSet<Movie>(), new HashSet<Movie>() };
                     }
-                    PersonNameToMovies[person.Name].Add(movie);
+                    PersonNameToMovies[person.Name][1].Add(movie);
                 }
             }
         }
@@ -58,6 +65,7 @@ public class DataLoader
                 TagsToMovies[tag].Add(movie);
             }
         }
+        if (true) ;
 
     }
 
@@ -70,20 +78,28 @@ public class DataLoader
         string line;
         bool english = false;
         bool russian = false;
+        string code = "tt0000001";
         while ((line = reader.ReadLine()) != null)
         {
             var parts = line.Split('\t');
             if (parts.Length < 5) continue;
             string tconst = parts[0];
-            int order = Convert.ToInt16(parts[1]);
-            if (order == 1)
+            if (movies.ContainsKey(tconst)) continue;
+            if (tconst != code)
             {
+                code = tconst;
                 english = false;
                 russian = false;
             }
+            ;
             if (parts[3] == "US" | parts[3] == "GB" | parts[3] == "CA" | parts[4] == "en") english = true;
             if (parts[3] == "RU" | parts[4] == "ru") russian = true;
-            if (english && russian) movies.Add(tconst, new Movie { Title = parts[2] });
+            if (english && russian)
+            {
+                movies.Add(tconst, new Movie { Title = parts[2] });
+                english = false;
+                russian = false;
+            };
         }
         return movies;
     }
@@ -133,8 +149,8 @@ public class DataLoader
         {
             var parts = line.Split('\t');
             if (parts.Length < 4) continue;
-            string nconst = parts[0];
-            string tconst = parts[2];
+            string tconst = parts[0];
+            string nconst = parts[2];
             string category = parts[3];
             if (personsByNConst.TryGetValue(nconst, out var person) && moviesByTConst.TryGetValue(tconst, out var movie))
             {
@@ -205,5 +221,17 @@ public class DataLoader
                 }
             }
         }
+    }
+    public string AddCountTT(string tconst)
+    {
+        if (tconst.StartsWith("tt") && tconst.Length < 9)
+        {
+            tconst = tconst.Substring(2);
+            tconst = tconst.TrimStart('0');
+            int num = int.Parse(tconst);
+            num++;
+            tconst = "tt" + num.ToString("D7");
+        }
+        return tconst;
     }
 }

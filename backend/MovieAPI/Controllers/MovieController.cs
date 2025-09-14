@@ -1,3 +1,7 @@
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("api/movie")]
 public class MovieController : ControllerBase
 {
     private readonly DataLoader _dataLoader;
@@ -10,15 +14,15 @@ public class MovieController : ControllerBase
     [HttpGet("{title}")]
     public IActionResult Get(string title)
     {
-        if (_dataLoader.MoviesByMovieName.TryGetValue(title, out var movie))
+        if (_dataLoader.MovieToMovieName.TryGetValue(title, out var movie))
         {
             return Ok(new
             {
-                movie.Title,
-                Actors = movie.Actors,
-                movie.Director,
+                title,
+                Actors = movie.Actors.Select(a => a.Name).ToList(),
+                Director = movie.Director?.Name,
                 Tags = movie.Tags,
-                movie.Rating
+                Rating = movie.Rating
             });
         }
         return NotFound();
