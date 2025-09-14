@@ -19,7 +19,7 @@ public class SearchController : ControllerBase
         var suggestions = new List<object>();
 
         // Movies
-        var movieMatches = _dataLoader.MoviesToMovieName
+        var movieMatches = _dataLoader.MovieToMovieName
             .Where(kv => kv.Key.Contains(query, StringComparison.OrdinalIgnoreCase))
             .Take(10)
             .Select(kv => new { Type = "movie", Value = kv.Key });
