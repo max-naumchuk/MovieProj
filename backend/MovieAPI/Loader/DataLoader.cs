@@ -74,7 +74,7 @@ public class DataLoader
         var movies = new Dictionary<string, Movie>();
         if (!File.Exists(path)) return movies;
         using var reader = new StreamReader(path);
-        reader.ReadLine(); // header
+        reader.ReadLine();
         string line;
         bool english = false;
         bool russian = false;
