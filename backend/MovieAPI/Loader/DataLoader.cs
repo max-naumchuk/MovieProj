@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.IdentityModel.Tokens;
+using System.Diagnostics;
 
+
+//18,655 секунд грузит
 public class DataLoader
 {
     public Dictionary<string, Movie> MovieToTConst { get; private set; } = new Dictionary<string, Movie>();
@@ -11,8 +14,11 @@ public class DataLoader
     public Dictionary<string, HashSet<Movie>> TagsToMovies { get; private set; } = new Dictionary<string, HashSet<Movie>>();
     public Dictionary<string, Person> PersonsToNConst { get; private set; } = new Dictionary<string, Person>();
 
+    public Stopwatch _applicationStopwatch = new();
+
     public DataLoader(string dataPath)
     {
+        _applicationStopwatch = Stopwatch.StartNew();
         LoadData(dataPath);
     }
 
@@ -65,6 +71,8 @@ public class DataLoader
                 TagsToMovies[tag].Add(movie);
             }
         }
+        TimeSpan elapsedTime = _applicationStopwatch.Elapsed;
+        Console.WriteLine($"Elapsed time since application start: {elapsedTime}");
         if (true) ;
 
     }
@@ -81,10 +89,10 @@ public class DataLoader
         string code = "tt0000001";
         while ((line = reader.ReadLine()) != null)
         {
+            if (movies.ContainsKey(line[..line.IndexOf('\t')])) continue;
             var parts = line.Split('\t');
-            if (parts.Length < 5) continue;
             string tconst = parts[0];
-            if (movies.ContainsKey(tconst)) continue;
+
             if (tconst != code)
             {
                 code = tconst;
@@ -99,7 +107,8 @@ public class DataLoader
                 movies.Add(tconst, new Movie { Title = parts[2] });
                 english = false;
                 russian = false;
-            };
+            }
+            ;
         }
         return movies;
     }
@@ -129,10 +138,8 @@ public class DataLoader
         string line;
         while ((line = reader.ReadLine()) != null)
         {
-            var parts = line.Split('\t');
-            if (parts.Length < 6) continue;
-            string nconst = parts[0];
-            string name = parts[1];
+            string nconst = line[..line.IndexOf('\t')];
+            string name = line[(line.IndexOf('\t') + 1)..line.IndexOf('\t', 11)];
             var person = new Person { Name = name };
             personsByNConst.Add(nconst, person);
         }
@@ -221,17 +228,5 @@ public class DataLoader
                 }
             }
         }
-    }
-    public string AddCountTT(string tconst)
-    {
-        if (tconst.StartsWith("tt") && tconst.Length < 9)
-        {
-            tconst = tconst.Substring(2);
-            tconst = tconst.TrimStart('0');
-            int num = int.Parse(tconst);
-            num++;
-            tconst = "tt" + num.ToString("D7");
-        }
-        return tconst;
     }
 }
